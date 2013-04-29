@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Options</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      @import url(http://fonts.googleapis.com/css?family=Droid+Sans+Mono;)
+      body {
+      padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+      }
+      #redirects {
+      width: 95%;
+      height: 200px;
+      margin-bottom: 20px;
+      font-family: 'Droid Sans Mono', monospace;
+      }
+      .container {
+      clear: both;
+      }
+      .navbar-inner {
+      background-color: #F6E4CC;
+      }
+    </style>
+    <link href="bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container">
+          <span class="brand">URL Mover Options</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div id="row-fluid">
+        <div id="span12">
+          <div class="form-horizontal">
+            <p class="desc">Should we enabled the mover???</p>
+            <div class="control-group">
+              <div class="controls">
+                <label for="pluginEnabled" class="checkbox">
+                  <input type="checkbox" name="enabled" id="pluginEnabled" />
+                  Enabled for all sites.
+                </label>
+              </div>
+            </div>
+
+            <p class="desc">
+              Enter url redirects as comma seperated pairs of replacements, one pair per line.
+              In every request, the first string will be replaced by the second.
+            </p>
+            <div class="control-group">
+              <label class="control-label" for="redirects">Redirects</label>
+              <div class="controls">
+                <textarea name="redirects" id="redirects"></textarea>
+                <br>
+                <button id="save_redirects" class="btn">Save</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="jquery-2.0.0.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="options.js"></script>
+  </body>
+</html>
