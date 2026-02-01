@@ -7,13 +7,72 @@ var pluginOptions = {
     },
 
     saveSettings: function() {
+        var self = this;
         storage.set({'options': this.options}, function() {
-            var notification = webkitNotifications.createNotification(
-                'bulldozer48.png',
-                'Saved!',
-                'Your settings were saved...'
-            );
-            notification.show();
+            chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'bulldozer48.png',
+                title: 'Saved!',
+                message: 'Your settings were saved...'
+            });
+
+            // Sync rules to declarativeNetRequest
+            self.updateNetworkRules();
+        });
+    },
+
+    // Converts user routes to declarativeNetRequest rules
+    updateNetworkRules: function() {
+        var self = this;
+
+        // Get all existing dynamic rules so we can remove them (clean slate)
+        chrome.declarativeNetRequest.getDynamicRules(function(existingRules) {
+            var removeRuleIds = existingRules.map(function(rule) { return rule.id; });
+
+            var addRules = [];
+            if (self.options.enabled && self.options.routes) {
+                for (var i = 0; i < self.options.routes.length; i++) {
+                    var val = self.options.routes[i];
+                    var searchPattern = val[0];
+                    var replacePattern = val[1];
+
+                    // V3 RE2 Regex syntax uses \1 for backreferences, not $1
+                    replacePattern = replacePattern.replace(/\$(\d)/g, '\\$1');
+
+                    addRules.push({
+                        "id": i + 1,
+                        "priority": 1,
+                        "action": {
+                            "type": "redirect",
+                            "redirect": {
+                                // \1 is everything before the match, \2 is everything after
+                                "regexSubstitution": "\\1" + replacePattern + "\\2"
+                            }
+                        },
+                        "condition": {
+                            // Match the pattern anywhere in the URL by wrapping in (.*)
+                            "regexFilter": "(.*)" + searchPattern + "(.*)",
+                            "resourceTypes": [
+                                "main_frame", "sub_frame", "stylesheet", "script",
+                                "image", "font", "object", "xmlhttprequest",
+                                "ping", "media", "websocket", "other"
+                            ]
+                        }
+                    });
+                }
+            }
+
+            // Update the rules in Chrome
+            chrome.declarativeNetRequest.updateDynamicRules({
+                removeRuleIds: removeRuleIds,
+                addRules: addRules
+            }, function() {
+                if (chrome.runtime.lastError) {
+                    console.error("Error updating rules:", chrome.runtime.lastError);
+                } else {
+                    console.log("Rules updated successfully");
+                }
+            });
         });
     },
 
@@ -78,33 +137,6 @@ var pluginOptions = {
         self.loadSettings(loadRoutes);
     },
 
-    setupRequestInterceptor: function() {
-        var self = this;
-
-        chrome.webRequest.onBeforeRequest.addListener(
-            function(details) {
-                if (self.options.enabled) {
-                    var redirectTo = null;
-                    for(var i = 0; i < self.options.routes.length; i++) {
-                        var val = self.options.routes[i];
-
-                        if (details.url.search(val[0]) != -1) {
-                            redirectTo = details.url.replace(val[0], val[1]);
-                        }
-                    }
-
-                    if (redirectTo != null) {
-                        console.log("Redirecting: " + details.url + " to " + redirectTo);
-                        return {redirectUrl: redirectTo};
-                    }
-                }
-
-                return null;
-            },
-            {urls: ["<all_urls>"]},
-            ["blocking"]);
-    },
-
     attachControls: function() {
         this.attachEnable();
         this.attachRoutes();
@@ -113,5 +145,4 @@ var pluginOptions = {
 
 $(function(){
     pluginOptions.attachControls();
-    pluginOptions.setupRequestInterceptor();
 });
